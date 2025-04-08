@@ -12,6 +12,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QSettings>
+#include <QScrollBar>
 
 #include "imageprocessor.h"
 #include "fiberanalyzer.h"
@@ -28,6 +29,8 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    
+    void loadImage(const QString &imagePath);
 
 private slots:
     void openImage();
@@ -56,6 +59,9 @@ private:
     void updateResultsPanel();
     bool checkSystemResources();
     void connectToLinuxSystemInfo();
+    
+    void scaleImage(double factor);
+    void adjustScrollBar(QScrollBar *scrollBar, double factor);
 
     Ui::MainWindow *ui;
     ImageProcessor *m_imageProcessor;

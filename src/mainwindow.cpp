@@ -29,6 +29,7 @@
 #include <QAction>
 #include <QMenu>
 #include <QMenuBar>
+#include <QFile>
 
 // Linux-specific includes
 #ifdef Q_OS_LINUX
@@ -502,10 +503,34 @@ void MainWindow::updateImageDisplay()
 void MainWindow::scaleImage(double factor)
 {
     m_zoomFactor *= factor;
-    updateImageDisplay();
     
-    // Update status bar with zoom level
-    statusBar()->showMessage(tr("Zoom: %1%").arg(int(m_zoomFactor * 100)), 2000);
+    // Adjust the image label size
+    QSize newSize = m_processedImage.size() * m_zoomFactor;
+    m_imageLabel->resize(newSize);
+    
+    // Create a scaled version of the image
+    QPixmap scaledPixmap = QPixmap::fromImage(m_processedImage)
+                          .scaled(newSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    
+    // Set the scaled image to the label
+    m_imageLabel->setPixmap(scaledPixmap);
+    
+    // Adjust scrollbars
+    adjustScrollBar(m_scrollArea->horizontalScrollBar(), factor);
+    adjustScrollBar(m_scrollArea->verticalScrollBar(), factor);
+    
+    // Update zoom actions
+    ui->actionZoomIn->setEnabled(m_zoomFactor < 3.0);
+    ui->actionZoomOut->setEnabled(m_zoomFactor > 0.333);
+    
+    // Update status bar with zoom info
+    statusBar()->showMessage(tr("Zoom: %1%").arg(m_zoomFactor * 100, 0, 'f', 0));
+}
+
+// Helper method to adjust scrollbars
+void MainWindow::adjustScrollBar(QScrollBar *scrollBar, double factor)
+{
+    scrollBar->setValue(int(factor * scrollBar->value() + ((factor - 1) * scrollBar->pageStep() / 2)));
 }
 
 void MainWindow::loadSettings()
@@ -598,4 +623,51 @@ void MainWindow::connectToLinuxSystemInfo()
     // For example, connecting to D-Bus for hardware events, etc.
     qDebug() << "Connected to Linux system monitoring";
 #endif
+}
+
+void MainWindow::loadImage(const QString &imagePath)
+{
+    if (imagePath.isEmpty()) {
+        return;
+    }
+    
+    if (!QFile::exists(imagePath)) {
+        QMessageBox::warning(this, tr("Image not found"),
+                            tr("The specified image file does not exist: %1").arg(imagePath));
+        return;
+    }
+    
+    // Load the image
+    QImage image(imagePath);
+    if (image.isNull()) {
+        QMessageBox::warning(this, tr("Invalid Image"),
+                            tr("The specified file is not a valid image: %1").arg(imagePath));
+        return;
+    }
+    
+    // Store image and update display
+    m_currentImage = image;
+    m_processedImage = image;
+    m_currentFilePath = imagePath;
+    
+    // Reset UI elements
+    m_filterComboBox->setCurrentIndex(0);
+    m_brightnessSlider->setValue(0);
+    m_contrastSlider->setValue(0);
+    
+    // Enable analysis button
+    m_analyzeButton->setEnabled(true);
+    
+    // Update the display
+    updateImageDisplay();
+    
+    // Update window title
+    QFileInfo fileInfo(imagePath);
+    setWindowTitle(tr("Fiber Inspector - %1").arg(fileInfo.fileName()));
+    
+    // Update status bar
+    statusBar()->showMessage(tr("Loaded image: %1 (%2x%3)")
+                           .arg(fileInfo.fileName())
+                           .arg(image.width())
+                           .arg(image.height()));
 } 

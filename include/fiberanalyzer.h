@@ -74,6 +74,11 @@ private:
     cv::Mat preProcessForAnalysis(const cv::Mat &inputImage);
     std::vector<cv::Rect> detectDefectRegions(const cv::Mat &processedImage);
     double calculateConcentricity(const cv::Point &center, double coreRadius, double claddingRadius);
+    
+    // Missing functions that need to be added
+    cv::Mat QImage2Mat(const QImage &image);
+    QString generateSummary(const FiberAnalysisResult &result);
+    double calculateQualityScore(const FiberAnalysisResult &result);
 };
 
 #endif // FIBERANALYZER_H 

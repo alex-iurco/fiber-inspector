@@ -8,14 +8,38 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-# Find Qt packages
-find_package(Qt6 COMPONENTS Widgets Core Gui QUIET)
-if (NOT Qt6_FOUND)
-    message(STATUS "Qt6 not found, trying to find Qt5")
-    find_package(Qt5 COMPONENTS Widgets Core Gui REQUIRED)
-    set(QT_VERSION_MAJOR 5)
+# Check if running in Docker
+if(EXISTS "/.dockerenv")
+    message(STATUS "Running inside Docker container")
+    # Explicitly set the Qt6 CMAKE_PREFIX_PATH for Docker environment
+    set(CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/cmake")
+    message(STATUS "Setting Qt6 prefix path for Docker: ${CMAKE_PREFIX_PATH}")
+endif()
+
+# Find OpenGL first (needed for Qt6)
+find_package(OpenGL QUIET)
+if(OpenGL_FOUND)
+    message(STATUS "OpenGL found")
 else()
-    set(QT_VERSION_MAJOR 6)
+    message(STATUS "OpenGL not found - some Qt6 features may be disabled")
+endif()
+
+# Find Qt packages with less strict requirements
+option(USE_QT6 "Prefer Qt6 over Qt5 if available" ON)
+if(USE_QT6)
+    find_package(Qt6 COMPONENTS Core QUIET)
+    if(Qt6Core_FOUND)
+        message(STATUS "Found Qt6Core, will use Qt6")
+        find_package(Qt6 COMPONENTS Widgets Gui REQUIRED)
+        set(QT_VERSION_MAJOR 6)
+    else()
+        message(STATUS "Qt6Core not found, trying Qt5")
+        find_package(Qt5 COMPONENTS Core Widgets Gui REQUIRED)
+        set(QT_VERSION_MAJOR 5)
+    endif()
+else()
+    find_package(Qt5 COMPONENTS Core Widgets Gui REQUIRED)
+    set(QT_VERSION_MAJOR 5)
 endif()
 
 message(STATUS "Using Qt${QT_VERSION_MAJOR}")
@@ -57,7 +81,7 @@ set(RESOURCES
     resources/resources.qrc
 )
 
-# Create executable
+# Create main executable
 add_executable(FiberInspector
     ${SOURCES}
     ${HEADERS}
@@ -65,17 +89,46 @@ add_executable(FiberInspector
     ${RESOURCES}
 )
 
-# Link libraries
+# Link libraries for main executable
 if(QT_VERSION_MAJOR EQUAL 6)
     target_link_libraries(FiberInspector PRIVATE
+        Qt6::Core
+        Qt6::Gui
         Qt6::Widgets
+        ${OpenCV_LIBS}
+    )
+    if(OpenGL_FOUND)
+        target_link_libraries(FiberInspector PRIVATE OpenGL::GL)
+    endif()
+else()
+    target_link_libraries(FiberInspector PRIVATE
+        Qt5::Core
+        Qt5::Gui
+        Qt5::Widgets
+        ${OpenCV_LIBS}
+    )
+endif()
+
+# Create test executable
+add_executable(TestCoreFunctionality
+    test_core_functionality.cpp
+    src/imageprocessor.cpp
+    src/fiberanalyzer.cpp
+    src/resultsmanager.cpp
+    include/imageprocessor.h
+    include/fiberanalyzer.h
+    include/resultsmanager.h
+)
+
+# Link libraries for test executable (no UI dependencies)
+if(QT_VERSION_MAJOR EQUAL 6)
+    target_link_libraries(TestCoreFunctionality PRIVATE
         Qt6::Core
         Qt6::Gui
         ${OpenCV_LIBS}
     )
 else()
-    target_link_libraries(FiberInspector PRIVATE
-        Qt5::Widgets
+    target_link_libraries(TestCoreFunctionality PRIVATE
         Qt5::Core
         Qt5::Gui
         ${OpenCV_LIBS}
@@ -84,13 +137,17 @@ endif()
 
 # Install
 install(TARGETS FiberInspector DESTINATION bin)
+install(TARGETS TestCoreFunctionality DESTINATION bin)
 
 # Output build information
 message(STATUS "CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "CMAKE_CXX_COMPILER_VERSION: ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "OpenCV libraries: ${OpenCV_LIBS}")
 
-# Check if we're running in Docker
-if(EXISTS "/.dockerenv")
-    message(STATUS "Running inside Docker container")
-endif() 
+# Print CMake search paths for debugging
+message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+get_directory_property(_vars DIRECTORY ${CMAKE_SOURCE_DIR} INCLUDE_DIRECTORIES)
+message(STATUS "INCLUDE_DIRECTORIES: ${_vars}")
+get_directory_property(_vars COMPILE_DEFINITIONS)
+message(STATUS "COMPILE_DEFINITIONS: ${_vars}") 

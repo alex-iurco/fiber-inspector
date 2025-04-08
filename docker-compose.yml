@@ -6,19 +6,6 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./:/home/developer/FiberInspector
-    environment:
-      - DISPLAY=${DISPLAY}
-    # For Linux hosts with X11:
-    # volumes:
-    #   - /tmp/.X11-unix:/tmp/.X11-unix
-    # For macOS hosts with XQuartz:
-    # network_mode: host
-    # Extra settings that may be needed for GUI apps
-    # security_opt:
-    #   - seccomp:unconfined
-    # cap_add:
-    #   - SYS_PTRACE
+      - ./:/app
     tty: true
-    stdin_open: true
-    command: /bin/bash 
+    stdin_open: true 

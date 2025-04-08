@@ -1,8 +1,8 @@
 #include <QApplication>
 #include <QCommandLineParser>
-#include <QFile>
-#include <QDebug>
+#include <QCommandLineOption>
 #include <QDir>
+#include <QDebug>
 #include <QSplashScreen>
 #include <QThread>
 #include <QtCore>
@@ -39,6 +39,24 @@ void checkSystemRequirements() {
 #endif
 }
 
+void setupLogging(bool verbose)
+{
+    // Set up message handling
+    qSetMessagePattern("[%{time yyyyMMdd h:mm:ss.zzz}] [%{type}] %{message}");
+    
+    // Filter out debug messages unless verbose mode is enabled
+    if (!verbose) {
+        qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+            if (type == QtDebugMsg) {
+                return; // Drop debug messages
+            }
+            
+            // Print other messages to stderr
+            fprintf(stderr, "%s\n", qPrintable(qFormatLogMessage(type, context, msg)));
+        });
+    }
+}
+
 int main(int argc, char *argv[])
 {
     // Set application attributes
@@ -49,29 +67,32 @@ int main(int argc, char *argv[])
     
     QApplication app(argc, argv);
     
-    // Parse command line arguments
+    // Set up command line options
     QCommandLineParser parser;
-    parser.setApplicationDescription("Fiber Inspection Tool");
+    parser.setApplicationDescription("Fiber optic endface inspection tool");
     parser.addHelpOption();
     parser.addVersionOption();
     
-    // Add custom options
-    QCommandLineOption imageOption(QStringList() << "i" << "image", 
-                                 "Open the specified image file", "image_path");
+    QCommandLineOption verboseOption(QStringList() << "v" << "verbose", "Enable verbose output");
+    parser.addOption(verboseOption);
+    
+    QCommandLineOption imageOption(QStringList() << "i" << "image", "Open image file on startup", "file");
     parser.addOption(imageOption);
     
-    QCommandLineOption fullscreenOption(QStringList() << "f" << "fullscreen", 
-                                      "Start in fullscreen mode");
+    QCommandLineOption fullscreenOption(QStringList() << "f" << "fullscreen", "Start in fullscreen mode");
     parser.addOption(fullscreenOption);
     
-    QCommandLineOption debugOption(QStringList() << "d" << "debug", 
-                                 "Enable debug mode");
-    parser.addOption(debugOption);
+    QCommandLineOption darkModeOption(QStringList() << "d" << "dark-mode", "Use dark color theme");
+    parser.addOption(darkModeOption);
     
+    // Process the command line arguments
     parser.process(app);
     
     // Check system requirements
     checkSystemRequirements();
+    
+    // Set up logging based on verbose flag
+    setupLogging(parser.isSet(verboseOption));
     
     // Load application style
     QFile styleFile(":/styles/dark.qss");
@@ -86,26 +107,45 @@ int main(int argc, char *argv[])
     splash.show();
     app.processEvents();
     
-    // Create and show the main window
-    MainWindow w;
+    // Create the main window
+    MainWindow mainWindow;
     
-    // Apply command line options
+    // Apply settings from command line
     if (parser.isSet(fullscreenOption)) {
-        w.showFullScreen();
+        mainWindow.showFullScreen();
     } else {
-        w.show();
+        mainWindow.show();
     }
     
-    // Open image if specified
+    if (parser.isSet(darkModeOption)) {
+        // Set dark palette for the application
+        QPalette darkPalette;
+        darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
+        darkPalette.setColor(QPalette::WindowText, Qt::white);
+        darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
+        darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
+        darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+        darkPalette.setColor(QPalette::ToolTipText, Qt::white);
+        darkPalette.setColor(QPalette::Text, Qt::white);
+        darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
+        darkPalette.setColor(QPalette::ButtonText, Qt::white);
+        darkPalette.setColor(QPalette::BrightText, Qt::red);
+        darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
+        darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
+        darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+        app.setPalette(darkPalette);
+    }
+    
+    // Load image if specified
     if (parser.isSet(imageOption)) {
         QString imagePath = parser.value(imageOption);
-        QMetaObject::invokeMethod(&w, "openImageFromPath", 
-                                Qt::QueuedConnection, 
-                                Q_ARG(QString, imagePath));
+        mainWindow.loadImage(imagePath);
     }
     
     // Hide splash screen
-    splash.finish(&w);
+    splash.finish(&mainWindow);
+    
+    qDebug() << "FiberInspector application started";
     
     return app.exec();
 } 

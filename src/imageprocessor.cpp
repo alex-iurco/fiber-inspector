@@ -11,14 +11,14 @@
 ImageProcessor::ImageProcessor()
     : m_isProcessing(false)
 {
-    // Initialize filter names map
-    m_filterNames[FilterType::None] = tr("No Filter");
-    m_filterNames[FilterType::Grayscale] = tr("Grayscale");
-    m_filterNames[FilterType::Threshold] = tr("Threshold");
-    m_filterNames[FilterType::EdgeDetection] = tr("Edge Detection");
-    m_filterNames[FilterType::Sharpen] = tr("Sharpen");
-    m_filterNames[FilterType::MedianBlur] = tr("Median Blur");
-    m_filterNames[FilterType::GaussianBlur] = tr("Gaussian Blur");
+    // Initialize filter names map - replace tr() with plain strings since this class doesn't inherit from QObject
+    m_filterNames[FilterType::None] = "No Filter";
+    m_filterNames[FilterType::Grayscale] = "Grayscale";
+    m_filterNames[FilterType::Threshold] = "Threshold";
+    m_filterNames[FilterType::EdgeDetection] = "Edge Detection";
+    m_filterNames[FilterType::Sharpen] = "Sharpen";
+    m_filterNames[FilterType::MedianBlur] = "Median Blur";
+    m_filterNames[FilterType::GaussianBlur] = "Gaussian Blur";
 }
 
 ImageProcessor::~ImageProcessor()
@@ -103,18 +103,30 @@ QImage ImageProcessor::applyFilter(const QImage &sourceImage, FilterType filter)
                 break;
                 
             case FilterType::Threshold:
-                // Apply adaptive threshold
-                dst = applyAdaptiveThreshold(sourceImage);
+                // Return the result directly from the helper method
+                {
+                    QImage result = applyAdaptiveThreshold(sourceImage);
+                    m_isProcessing = false;
+                    return result;
+                }
                 break;
                 
             case FilterType::EdgeDetection:
-                // Apply edge detection
-                dst = applyCannyEdgeDetection(sourceImage);
+                // Return the result directly from the helper method
+                {
+                    QImage result = applyCannyEdgeDetection(sourceImage);
+                    m_isProcessing = false;
+                    return result;
+                }
                 break;
                 
             case FilterType::Sharpen:
-                // Apply sharpen filter
-                dst = applySharpenFilter(sourceImage);
+                // Return the result directly from the helper method
+                {
+                    QImage result = applySharpenFilter(sourceImage);
+                    m_isProcessing = false;
+                    return result;
+                }
                 break;
                 
             case FilterType::MedianBlur:
@@ -433,64 +445,15 @@ QImage ImageProcessor::applySobelFilter(const QImage &sourceImage)
     }
 }
 
-QImage ImageProcessor::applyCannyEdgeDetection(const QImage &sourceImage)
-{
-    try {
-        cv::Mat src = qImageToMat(sourceImage);
-        
-        // Convert to grayscale
-        cv::Mat gray;
-        if (src.channels() == 3 || src.channels() == 4) {
-            cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
-        } else {
-            gray = src.clone();
-        }
-        
-        // Apply Gaussian blur to reduce noise
-        cv::Mat blurred;
-        cv::GaussianBlur(gray, blurred, cv::Size(5, 5), 1.4);
-        
-        // Apply Canny edge detection
-        cv::Mat edges;
-        cv::Canny(blurred, edges, 50, 150);
-        
-        // Convert back to color for display
-        cv::Mat result;
-        cv::cvtColor(edges, result, cv::COLOR_GRAY2BGR);
-        
-        return matToQImage(result);
-    } catch (const cv::Exception &e) {
-        qWarning() << "OpenCV exception when applying Canny edge detection: " << e.what();
-        return sourceImage;
-    }
-}
-
-QImage ImageProcessor::applySharpenFilter(const QImage &sourceImage)
-{
-    try {
-        cv::Mat src = qImageToMat(sourceImage);
-        cv::Mat dst;
-        
-        // Create sharpening kernel
-        cv::Mat kernel = (cv::Mat_<float>(3, 3) << 0, -1, 0, -1, 5, -1, 0, -1, 0);
-        
-        // Apply filter
-        cv::filter2D(src, dst, -1, kernel);
-        
-        return matToQImage(dst);
-    } catch (const cv::Exception &e) {
-        qWarning() << "OpenCV exception when applying sharpen filter: " << e.what();
-        return sourceImage;
-    }
-}
-
 QImage ImageProcessor::applyAdaptiveThreshold(const QImage &sourceImage)
 {
     try {
+        // Convert QImage to grayscale OpenCV Mat
         cv::Mat src = qImageToMat(sourceImage);
-        
-        // Convert to grayscale
         cv::Mat gray;
+        cv::Mat dst;
+        
+        // Convert to grayscale if needed
         if (src.channels() == 3 || src.channels() == 4) {
             cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
         } else {
@@ -498,17 +461,72 @@ QImage ImageProcessor::applyAdaptiveThreshold(const QImage &sourceImage)
         }
         
         // Apply adaptive threshold
-        cv::Mat binary;
-        cv::adaptiveThreshold(gray, binary, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, 
-                            cv::THRESH_BINARY, 11, 2);
+        cv::adaptiveThreshold(gray, dst, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 11, 2);
         
-        // Convert back to color for display
-        cv::Mat result;
-        cv::cvtColor(binary, result, cv::COLOR_GRAY2BGR);
+        // Convert back to 3-channel for consistency
+        cv::cvtColor(dst, dst, cv::COLOR_GRAY2BGR);
         
-        return matToQImage(result);
+        // Convert back to QImage
+        return matToQImage(dst);
     } catch (const cv::Exception &e) {
-        qWarning() << "OpenCV exception when applying adaptive threshold: " << e.what();
+        qWarning() << "OpenCV exception in applyAdaptiveThreshold: " << e.what();
+        return sourceImage;
+    }
+}
+
+QImage ImageProcessor::applyCannyEdgeDetection(const QImage &sourceImage)
+{
+    try {
+        // Convert QImage to OpenCV Mat
+        cv::Mat src = qImageToMat(sourceImage);
+        cv::Mat gray;
+        cv::Mat edges;
+        cv::Mat dst;
+        
+        // Convert to grayscale
+        if (src.channels() == 3 || src.channels() == 4) {
+            cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+        } else {
+            gray = src.clone();
+        }
+        
+        // Apply Gaussian blur to reduce noise
+        cv::GaussianBlur(gray, gray, cv::Size(5, 5), 1.5);
+        
+        // Apply Canny edge detection
+        cv::Canny(gray, edges, 50, 150);
+        
+        // Convert to 3-channel for consistency
+        cv::cvtColor(edges, dst, cv::COLOR_GRAY2BGR);
+        
+        // Convert back to QImage
+        return matToQImage(dst);
+    } catch (const cv::Exception &e) {
+        qWarning() << "OpenCV exception in applyCannyEdgeDetection: " << e.what();
+        return sourceImage;
+    }
+}
+
+QImage ImageProcessor::applySharpenFilter(const QImage &sourceImage)
+{
+    try {
+        // Convert QImage to OpenCV Mat
+        cv::Mat src = qImageToMat(sourceImage);
+        cv::Mat dst;
+        
+        // Create sharpening kernel
+        cv::Mat kernel = (cv::Mat_<float>(3, 3) << 
+                       0, -1, 0,
+                       -1, 5, -1,
+                       0, -1, 0);
+        
+        // Apply kernel
+        cv::filter2D(src, dst, -1, kernel);
+        
+        // Convert back to QImage
+        return matToQImage(dst);
+    } catch (const cv::Exception &e) {
+        qWarning() << "OpenCV exception in applySharpenFilter: " << e.what();
         return sourceImage;
     }
 } 
