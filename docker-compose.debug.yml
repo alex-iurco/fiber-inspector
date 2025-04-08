@@ -2,9 +2,9 @@ version: '3'
 
 services:
   dev:
-    build:
+    build: 
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.debug
     volumes:
       - ./:/app
     ports:

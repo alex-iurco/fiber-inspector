@@ -8,6 +8,18 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+# Option to enable debug mode
+option(ENABLE_DEBUG "Enable debug configuration with symbols" OFF)
+
+if(ENABLE_DEBUG)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/DebugOptions.cmake)
+else()
+    # Default to Release mode without debug symbols
+    if(NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE Release)
+    endif()
+endif()
+
 # Check if running in Docker
 if(EXISTS "/.dockerenv")
     message(STATUS "Running inside Docker container")
@@ -142,6 +154,7 @@ install(TARGETS TestCoreFunctionality DESTINATION bin)
 # Output build information
 message(STATUS "CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "CMAKE_CXX_COMPILER_VERSION: ${CMAKE_CXX_COMPILER_VERSION}")
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "OpenCV libraries: ${OpenCV_LIBS}")
 
 # Print CMake search paths for debugging

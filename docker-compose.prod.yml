@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  dev:
+    build: 
+      context: .
+      dockerfile: Dockerfile.prod
+    volumes:
+      - ./:/app
+    tty: true
+    stdin_open: true 

@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Docker: Debug FiberInspector",
+            "type": "lldb",
+            "request": "custom",
+            "targetCreateCommands": [
+                "target create ${workspaceFolder}/build/FiberInspector"
+            ],
+            "processCreateCommands": [
+                "gdb-remote 127.0.0.1:1234"
+            ]
+        },
+        {
+            "name": "Docker: Debug TestCoreFunctionality",
+            "type": "lldb",
+            "request": "custom",
+            "targetCreateCommands": [
+                "target create ${workspaceFolder}/build/TestCoreFunctionality"
+            ],
+            "processCreateCommands": [
+                "gdb-remote 127.0.0.1:1234"
+            ]
+        }
+    ]
+} 

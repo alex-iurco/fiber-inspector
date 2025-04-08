@@ -1,0 +1,52 @@
+FROM ubuntu:22.04
+
+# Avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies for Qt, OpenCV, and C++ development including debug tools
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    libopencv-dev \
+    libopencv-contrib-dev \
+    qt6-base-dev \
+    qt6-base-dev-tools \
+    libqt6opengl6-dev \
+    libqt6core5compat6-dev \
+    libx11-dev \
+    libxcb-icccm4-dev \
+    libxcb-image0-dev \
+    libxcb-keysyms1-dev \
+    libxcb-render-util0-dev \
+    libxcb-randr0-dev \
+    libxcb-shape0-dev \
+    libxcb-xinerama0-dev \
+    libxcb-xkb-dev \
+    libxkbcommon-dev \
+    libxkbcommon-x11-dev \
+    gdb \
+    gdbserver \
+    vim \
+    nano \
+    sudo \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+ARG USERNAME=developer
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Set up the working directory
+WORKDIR /app
+
+# Set the default user
+USER $USERNAME
+
+# Default command to keep the container running
+CMD ["bash"] 
