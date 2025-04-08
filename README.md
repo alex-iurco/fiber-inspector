@@ -1,119 +1,105 @@
 # Fiber Inspector
 
-A Qt/C++ application for fiber-optic inspection, analysis, and defect detection.
+A Qt/OpenCV application for optical fiber inspection and analysis.
 
 ## Overview
 
-Fiber Inspector is a demonstration application that showcases C++/Qt programming skills combined with image processing capabilities specifically designed for fiber inspection microscopes. The application provides a user-friendly interface for loading, processing, analyzing, and saving fiber inspection images.
+Fiber Inspector is a desktop application designed to analyze optical fiber images to detect defects, measure core-cladding ratios, and assess fiber quality. It provides powerful image processing capabilities and automated analysis for fiber optic technicians and quality control specialists.
 
 ## Features
 
-- **Qt-based GUI**: Modern interface with image display and control panels
-- **Image Processing**: Multiple filters and adjustments using OpenCV
-- **Fiber Analysis**: Algorithms to detect and classify fiber defects
-- **Linux Integration**: Utilizes Linux-specific features for hardware integration
-- **Results Management**: Save, load, and export analysis results
+- **Image Processing**: Apply various filters (grayscale, threshold, edge detection, etc.) to enhance fiber images
+- **Fiber Analysis**: Automated detection of fiber core and cladding with measurements
+- **Defect Detection**: Identify scratches, chips, cracks, and contamination in fiber endfaces
+- **Result Management**: Save analysis results and generate reports in JSON and PDF formats
+- **Modern UI**: Qt-based user interface with intuitive controls and visualization
+
+## Technology Stack
+
+- **C++17**: Core programming language
+- **Qt6**: UI framework and cross-platform support
+- **OpenCV 4.5+**: Computer vision and image processing
+- **CMake**: Build system
+- **Docker**: Development and testing environment
 
 ## Requirements
 
-- C++17 compatible compiler
-- Qt 6.x
-- OpenCV 4.x
+- C++17 compatible compiler (GCC 9+, Clang 10+, or MSVC 19.20+)
+- Qt 6.0+ (Qt 5.15+ also supported)
+- OpenCV 4.5+
 - CMake 3.14+
-- Linux operating system (for full functionality)
 
-## Building the Application
+## Building from Source
 
-### Option 1: Native Build (Linux)
-
-1. Make sure you have all dependencies installed:
+### Using Docker (Recommended)
 
 ```bash
-# For Ubuntu/Debian
-sudo apt update
-sudo apt install build-essential cmake qt6-base-dev libopencv-dev
-```
+# Clone the repository
+git clone https://github.com/alex-iurco/fiber-inspector.git
+cd fiber-inspector
 
-2. Clone the repository:
+# Build and run with Docker
+docker-compose up -d
+docker-compose exec dev bash
 
-```bash
-git clone https://github.com/yourusername/FiberInspector.git
-cd FiberInspector
-```
-
-3. Create a build directory and compile:
-
-```bash
-mkdir build && cd build
-cmake ..
-make
-```
-
-4. Run the application:
-
-```bash
+# Inside Docker container
+cd /app
+./rebuild.sh
+cd build
 ./FiberInspector
 ```
 
-### Option 2: Docker Development Environment (Cross-Platform)
-
-We provide a Docker-based development environment that includes all required dependencies. This is the recommended approach, especially on non-Linux systems.
-
-See [README-DOCKER.md](README-DOCKER.md) for detailed instructions on using the Docker environment.
-
-Quick start:
+### Manual Build
 
 ```bash
-# Build and start the container
-docker-compose build
-docker-compose up -d
+# Prerequisites: CMake, Qt6, OpenCV 4.5+
 
-# Enter the container
-docker-compose exec dev bash
+# Clone the repository
+git clone https://github.com/alex-iurco/fiber-inspector.git
+cd fiber-inspector
 
-# Build the project inside the container
-./setup.sh
+# Create build directory
+mkdir -p build
+cd build
+
+# Configure and build
+cmake ..
+make -j$(nproc)
+
+# Run the application
+./FiberInspector
 ```
 
-## Project Structure
+## Testing
 
-- **src/**: Source files
-  - **main.cpp**: Application entry point
-  - **mainwindow.cpp**: Main application window
-  - **imageprocessor.cpp**: Image processing functionality
-  - **fiberanalyzer.cpp**: Fiber analysis algorithms
-  - **resultsmanager.cpp**: Results and report management
-- **include/**: Header files
-- **resources/**: Application resources (icons, sample images)
-- **docs/**: Documentation
-- **tests/**: Unit tests
+Run the automated tests to verify core functionality:
 
-## Usage
+```bash
+cd fiber-inspector
+./run_test.sh
+```
 
-1. Launch the application
-2. Use the "Open" button to load a fiber image
-3. Apply filters or adjustments as needed
-4. Click "Analyze Fiber" to perform defect detection
-5. View the results and export reports if needed
+This will build and run both the main application and the core functionality test in offscreen mode.
 
-## Linux System Integration
+## Directory Structure
 
-The application demonstrates Linux integration through:
+- `include/`: Header files
+- `src/`: Source files
+- `resources/`: Application resources (icons, sample images)
+- `build/`: Build output directory (created during build)
+- `test_core_functionality.cpp`: Core functionality test
 
-- System resource checking (memory/disk/GPU)
-- Process management for background tasks
-- Access to system information via native Linux APIs
-- Camera device access for live imaging
+## Key Components
+
+- `mainwindow.cpp`: Main application window and UI
+- `imageprocessor.cpp`: Image loading, processing, and filters
+- `fiberanalyzer.cpp`: Fiber detection and analysis algorithms
+- `resultsmanager.cpp`: Results storage and report generation
 
 ## License
 
-MIT License
+Copyright (c) 2023. All rights reserved.
 
 ## Contact
 
-Your Name - your.email@example.com
-
-## Acknowledgments
-
-- OpenCV for image processing capabilities
-- Qt for the GUI framework 
+- Project Repository: https://github.com/alex-iurco/fiber-inspector 
