@@ -1,0 +1,48 @@
+# Build directories
+build/
+cmake-build-*/
+
+# IDE directories
+.idea/
+.vscode/
+.vs/
+*.sublime-*
+
+# Compiled Object files
+*.o
+*.obj
+*.lo
+*.slo
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.a
+*.lib
+*.la
+*.lai
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Qt generated files
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+*.qm
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+*.moc
+
+# Misc
+*.log
+*.tmp
+.DS_Store
+Thumbs.db 

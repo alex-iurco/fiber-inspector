@@ -1,0 +1,11 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/">
+        <file>icons/open.png</file>
+        <file>icons/save.png</file>
+        <file>icons/analyze.png</file>
+        <file>icons/settings.png</file>
+        <file>sample_images/fiber1.png</file>
+        <file>sample_images/fiber2.png</file>
+    </qresource>
+</RCC> 
